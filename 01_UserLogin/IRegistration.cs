@@ -1,8 +1,8 @@
 ﻿namespace _01_UserLogin
 {
-    internal interface IRegistration
+    public interface IRegistration
     {
-        void Register(string email, string password, string nickname);
-        void Confirm(string registrationNumber);
+        public void Register(string email, string password, string nickname);
+        public void Confirm(string registrationNumber);
     }
 }
