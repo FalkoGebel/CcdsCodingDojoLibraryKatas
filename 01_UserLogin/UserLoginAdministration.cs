@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace _01_UserLogin
 {
-    public partial class UserLoginAdministration : IRegistration
+    public class UserLoginAdministration : IRegistration
     {
         private List<User> _users;
 
@@ -14,11 +14,15 @@ namespace _01_UserLogin
 
         public void Confirm(string registrationNumber)
         {
-            // TODO - Validate registration number
-            // TODO - Confirm user for this registration number and invalidate registration number
-            // TODO - Create confirmation email includig password, if not given by the user
+            uint validatedRregistrationNumber = ValidateRegistrationNumber(registrationNumber);
+            User? user = _users.FirstOrDefault(u => u.RegistrationNumber == validatedRregistrationNumber);
 
-            throw new NotImplementedException();
+            if (user == null)
+                throw new InvalidOperationException("No unconfired user find for this registration number");
+            else
+                user.RegistrationNumber = 0;
+
+            // TODO - Create confirmation email includig password, if not given by the user
         }
 
         public List<User> GetUsers()
@@ -30,19 +34,27 @@ namespace _01_UserLogin
         {
             ValidateEmail(email);
 
-            // TODO - email still free (not used yet)
-
             if (password == string.Empty)
                 password = CreatePassword();
 
             ValidatePassword(password);
 
             if (nickname != string.Empty)
+            {
                 ValidateNickname(nickname);
 
-            // TODO - nickname still free (not used yet)
+                // nickname still free (not used yet)
+                if (_users.Any(u => u.Nickname == nickname))
+                    throw new InvalidOperationException($"Nickname {nickname} already used.");
+            }
 
-            // TODO - Create user (create ID) and save it to data
+            LoadUsers();
+
+            // email still free (not used yet)
+            if (_users.Any(u => u.Email == email))
+                throw new InvalidOperationException($"Email {email} already registered.");
+
+            // Create user with GUID as ID and registration number (not confirmed user)
             DateTime today = DateTime.Now;
 
             User newUser = new()
@@ -50,7 +62,8 @@ namespace _01_UserLogin
                 Id = Guid.NewGuid().ToString(),
                 Email = email,
                 Nickname = nickname,
-                Confirmed = false,
+                Password = password,
+                RegistrationNumber = CreateRegistrationNumber(),
                 RegistrationDate = today,
                 LastLoginDate = today,
                 LastUpdatedDate = today
@@ -58,9 +71,27 @@ namespace _01_UserLogin
 
             _users.Add(newUser);
 
-            // TODO - Create registration number and bind it to user
-            // TODO - Create registration email and send it
+            SaveUsers();
 
+            SendRegistrationMail(newUser);
+        }
+
+        private void LoadUsers()
+        {
+            // TODO - get users from data
+            //throw new NotImplementedException();
+        }
+
+        private void SaveUsers()
+        {
+            // TODO - save users to data
+            //throw new NotImplementedException();
+        }
+
+        private static void SendRegistrationMail(User user)
+        {
+            // TODO - Create registration email and send it
+            //throw new NotImplementedException();
         }
 
         public static string CreatePassword()
@@ -148,5 +179,26 @@ namespace _01_UserLogin
         }
 
         public static string GetSpecialCharacters() => "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~€";
+
+        private uint CreateRegistrationNumber()
+        {
+            Random rnd = new();
+            uint output = 0;
+
+            do
+            {
+                output = (uint)rnd.Next();
+            } while (output == 0 || _users.Any(u => u.RegistrationNumber == output));
+
+            return output;
+        }
+
+        public static uint ValidateRegistrationNumber(string registrationNumber)
+        {
+            if (uint.TryParse(registrationNumber, out uint result) && result > 0)
+                return result;
+
+            throw new ArgumentException("Invalid registration number");
+        }
     }
 }

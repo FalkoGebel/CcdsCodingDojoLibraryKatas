@@ -87,7 +87,6 @@ namespace Tests
             UserLoginAdministration.GetSpecialCharacters().Should().Be(expected);
         }
 
-
         [TestMethod]
         public void Create_valid_ten_passwords()
         {
@@ -113,12 +112,93 @@ namespace Tests
             User user = users[0];
 
             user.Id.Should().NotBeNullOrEmpty();
+            Guid.TryParse(user.Id, out _).Should().BeTrue();
             user.Email.Should().Be(email);
             user.Nickname.Should().BeEmpty();
+            user.Password.Should().NotBeNullOrEmpty();
+            UserLoginAdministration.ValidatePassword(user.Password);
             user.Confirmed.Should().BeFalse();
             user.RegistrationDate.Date.Should().Be(today.Date);
             user.LastLoginDate.Date.Should().Be(today.Date);
             user.LastUpdatedDate.Date.Should().Be(today.Date);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
+        public void Register_new_user_without_nickname_twice()
+        {
+            UserLoginAdministration sut = new();
+            string email = "mail@mail.com";
+
+            sut.Register(email, "", "");
+            sut.Register(email, "", "");
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
+        public void Register_new_users_with_same_nickname()
+        {
+            UserLoginAdministration sut = new();
+            string email1 = "mail1@mail.com";
+            string email2 = "mail2@mail.com";
+            string nickname = "Peter";
+
+            sut.Register(email1, "", nickname);
+            sut.Register(email2, "", nickname);
+        }
+
+        [DataTestMethod]
+        [DataRow("")]
+        [DataRow("email")]
+        [DataRow("-1200")]
+        [DataRow("0")]
+        [DataRow("invalid_registration_number")]
+        [ExpectedException(typeof(ArgumentException))]
+        public void Validate_invalid_registration_number(string registrationNumber)
+        {
+            UserLoginAdministration.ValidateRegistrationNumber(registrationNumber);
+        }
+
+        [DataTestMethod]
+        [DataRow("1")]
+        [DataRow("55")]
+        [DataRow("123478934")]
+        public void Validate_valid_registration_number(string registrationNumber)
+        {
+            UserLoginAdministration.ValidateRegistrationNumber(registrationNumber).Should().Be(uint.Parse(registrationNumber));
+        }
+
+        [TestMethod]
+        public void Confirm_unconfirmed_user()
+        {
+            UserLoginAdministration sut = new();
+            string email = "mail1@mail.com";
+            string nickname = "Peter";
+
+            sut.Register(email, "", nickname);
+
+            User user = sut.GetUsers()[0];
+
+            sut.Confirm(user.RegistrationNumber.ToString());
+
+            user.Confirmed.Should().BeTrue();
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
+        public void Confirm_confirmed_user()
+        {
+            UserLoginAdministration sut = new();
+            string email = "mail1@mail.com";
+            string nickname = "Peter";
+
+            sut.Register(email, "", nickname);
+
+            User user = sut.GetUsers()[0];
+            string registrationNumber = user.RegistrationNumber.ToString();
+
+            sut.Confirm(registrationNumber);
+            sut.Confirm(registrationNumber);
         }
     }
 }
