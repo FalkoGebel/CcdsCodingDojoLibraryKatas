@@ -200,5 +200,43 @@ namespace Tests
             sut.Confirm(registrationNumber);
             sut.Confirm(registrationNumber);
         }
+
+        [DataTestMethod]
+        [DataRow("")]
+        [ExpectedException(typeof(ArgumentException))]
+        public void Get_user_for_empty_loginname(string loginname)
+        {
+            UserLoginAdministration sut = new();
+            sut.GetUserForLoginname(loginname);
+        }
+
+        [TestMethod]
+        public void Get_user_for_loginname_email_or_nickname()
+        {
+            UserLoginAdministration sut = new();
+            sut.Register("mail1@mail.com", "", "Peter");
+            User userPeter = sut.GetUsers()[^1];
+            string registrationNumber = userPeter.RegistrationNumber.ToString();
+            sut.Confirm(registrationNumber);
+            sut.Register("mail2@mail.com", "", "");
+            User userNoName = sut.GetUsers()[^1];
+            registrationNumber = userNoName.RegistrationNumber.ToString();
+            sut.Confirm(registrationNumber);
+            sut.Register("mail3@mail.com", "", "Thomas_P");
+            User userThomasP = sut.GetUsers()[^1];
+            registrationNumber = userThomasP.RegistrationNumber.ToString();
+            sut.Confirm(registrationNumber);
+            sut.Register("mail4@mail.com", "", "Clara");
+            User userClara = sut.GetUsers()[^1];
+            sut.GetUserForLoginname("mail1@mail.com").Should().BeEquivalentTo(userPeter);
+            sut.GetUserForLoginname("Peter").Should().BeEquivalentTo(userPeter);
+            sut.GetUserForLoginname("mail2@mail.com").Should().BeEquivalentTo(userNoName);
+            sut.GetUserForLoginname("mail3@mail.com").Should().BeEquivalentTo(userThomasP);
+            sut.GetUserForLoginname("Thomas_P").Should().BeEquivalentTo(userThomasP);
+            sut.GetUserForLoginname("mail4@mail.com").Should().BeEquivalentTo(userClara);
+            sut.GetUserForLoginname("mail10@mail.com").Should().BeNull();
+            sut.GetUserForLoginname("Clara").Should().BeEquivalentTo(userClara);
+            sut.GetUserForLoginname("Star").Should().BeNull();
+        }
     }
 }

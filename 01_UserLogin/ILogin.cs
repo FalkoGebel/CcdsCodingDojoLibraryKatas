@@ -1,4 +1,6 @@
-﻿namespace _01_UserLogin
+﻿// TODO - if password was created during registration the user has to change it with the first login
+
+namespace _01_UserLogin
 {
     public interface ILogin
     {
