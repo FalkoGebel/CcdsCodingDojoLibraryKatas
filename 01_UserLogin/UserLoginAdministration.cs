@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace _01_UserLogin
 {
-    public class UserLoginAdministration : IRegistration
+    public class UserLoginAdministration : IRegistration, ILogin
     {
         private List<User> _users;
 
@@ -22,7 +22,7 @@ namespace _01_UserLogin
             else
                 user.RegistrationNumber = 0;
 
-            // TODO - Create confirmation email includig password, if not given by the user
+            SendConfirmationEmail(user);
         }
 
         public List<User> GetUsers()
@@ -73,7 +73,7 @@ namespace _01_UserLogin
 
             SaveUsers();
 
-            SendRegistrationMail(newUser);
+            SendRegistrationEmail(newUser);
         }
 
         private void LoadUsers()
@@ -88,9 +88,15 @@ namespace _01_UserLogin
             //throw new NotImplementedException();
         }
 
-        private static void SendRegistrationMail(User user)
+        private static void SendRegistrationEmail(User user)
         {
             // TODO - Create registration email and send it
+            //throw new NotImplementedException();
+        }
+
+        private static void SendConfirmationEmail(User user)
+        {
+            // TODO - Create confirmation email and send it
             //throw new NotImplementedException();
         }
 
@@ -199,6 +205,53 @@ namespace _01_UserLogin
                 return result;
 
             throw new ArgumentException("Invalid registration number");
+        }
+
+        public string Login(string loginname, string password)
+        {
+            // TODO - Get user for loginname (email or nickname)
+            User? user = GetUserForLoginname(loginname);
+
+            // TODO - Validate password
+
+
+            // TODO - Validate login
+            // TODO - User confirmed?
+            // TODO - Create token and save to user
+
+            throw new NotImplementedException();
+        }
+
+        public bool IsLoginValid(string token)
+        {
+            // TODO - Validate token
+
+            throw new NotImplementedException();
+        }
+
+        public void RequestPasswordReset(string email)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ResetPassword(string resetRequestNumber)
+        {
+            throw new NotImplementedException();
+        }
+
+        public User? GetUserForLoginname(string loginname)
+        {
+            if (string.IsNullOrEmpty(loginname))
+                throw new ArgumentException("Loginname is missing");
+
+            User? user = null;
+
+            user = _users.Where(u => u.Email == loginname).FirstOrDefault();
+
+            if (user == null)
+                user = _users.Where(u => u.Nickname == loginname).FirstOrDefault();
+
+            return user;
         }
     }
 }
