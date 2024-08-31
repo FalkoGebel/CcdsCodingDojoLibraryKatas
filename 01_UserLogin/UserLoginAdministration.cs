@@ -7,6 +7,8 @@ namespace _01_UserLogin
     {
         private List<User> _users;
 
+        public int TokenLifetimeInDays { get; set; } = 100;
+
         public UserLoginAdministration()
         {
             _users = [];
@@ -97,6 +99,18 @@ namespace _01_UserLogin
         private static void SendConfirmationEmail(User user)
         {
             // TODO - Create confirmation email and send it
+            //throw new NotImplementedException();
+        }
+
+        private static void SendRequestPasswordEmail(User user)
+        {
+            // TODO - Create request password email and send it
+            //throw new NotImplementedException();
+        }
+
+        private static void SendNewPasswordEmail(User user)
+        {
+            // TODO - Create new password email and send it
             //throw new NotImplementedException();
         }
 
@@ -209,34 +223,81 @@ namespace _01_UserLogin
 
         public string Login(string loginname, string password)
         {
-            // TODO - Get user for loginname (email or nickname)
             User? user = GetUserForLoginname(loginname);
 
-            // TODO - Validate password
+            if (user == null || user.Password != password || !user.Confirmed)
+                throw new ArgumentException("Invalid loginname or invalid password");
 
+            user.Token = GetNewToken();
+            SaveUsers();
+            return user.Token;
+        }
 
-            // TODO - Validate login
-            // TODO - User confirmed?
-            // TODO - Create token and save to user
-
-            throw new NotImplementedException();
+        private string GetNewToken()
+        {
+            byte[] time = BitConverter.GetBytes(DateTime.UtcNow.AddDays(TokenLifetimeInDays).ToBinary());
+            byte[] key = Guid.NewGuid().ToByteArray();
+            return Convert.ToBase64String(time.Concat(key).ToArray());
         }
 
         public bool IsLoginValid(string token)
         {
-            // TODO - Validate token
+            if (_users.Count(u => u.Token == token) == 0)
+                return false;
 
-            throw new NotImplementedException();
+            byte[] tokenByteArray = Convert.FromBase64String(token);
+            DateTime validUntil = DateTime.FromBinary(BitConverter.ToInt64(tokenByteArray, 0));
+            return validUntil.Date >= DateTime.UtcNow.Date;
         }
 
         public void RequestPasswordReset(string email)
         {
-            throw new NotImplementedException();
+            User? user = _users.FirstOrDefault(u => u.Email == email);
+
+            if (user == null)
+                throw new ArgumentException("No user found for this email address");
+
+            user.ResetRequestNumber = CreateResetRequestNumber();
+
+            SaveUsers();
+
+            SendRequestPasswordEmail(user);
         }
 
         public void ResetPassword(string resetRequestNumber)
         {
-            throw new NotImplementedException();
+            uint number = ValidateResetRequestNumber(resetRequestNumber);
+            User? user = _users.FirstOrDefault(u => u.ResetRequestNumber == number);
+
+            if (user == null)
+                throw new InvalidOperationException("No user found for this reset request number");
+
+            user.Password = CreatePassword();
+
+            SaveUsers();
+
+            SendNewPasswordEmail(user);
+        }
+
+        public static uint ValidateResetRequestNumber(string resetRequestNumber)
+        {
+            if (uint.TryParse(resetRequestNumber, out uint result) && result > 0)
+                return result;
+
+            throw new ArgumentException("Invalid reset request number");
+        }
+
+        private uint CreateResetRequestNumber()
+        {
+            Random rnd = new();
+            uint output = 0;
+
+            do
+            {
+                output = (uint)rnd.Next();
+            } while (output == 0 || _users.Any(u => u.ResetRequestNumber == output));
+
+            return output;
         }
 
         public User? GetUserForLoginname(string loginname)
