@@ -412,5 +412,198 @@ namespace Tests
             sut.GetUsers()[^1].Password.Should().NotBeNullOrEmpty();
             sut.GetUsers()[^1].Password.Should().NotBe(oldPassword);
         }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void Current_user_with_invalid_token()
+        {
+            UserLoginAdministration sut = new();
+            sut.CurrentUser("invalid_token");
+        }
+
+        [TestMethod]
+        public void Current_user_with_valid_token()
+        {
+            UserLoginAdministration sut = new();
+            string email = "mail1@mail.com",
+                   password = "ABcd01_-1223",
+                   nickname = "Peter";
+            sut.Register(email, password, nickname);
+            User userPeter = sut.GetUsers()[^1];
+            string registrationNumber = userPeter.RegistrationNumber.ToString();
+            sut.Confirm(registrationNumber);
+            string token = sut.Login(nickname, password);
+            sut.CurrentUser(token).Should().BeEquivalentTo(userPeter);
+        }
+
+        [DataTestMethod]
+        [DataRow("")]
+        [DataRow("invalid_user_id")]
+        [ExpectedException(typeof(ArgumentException))]
+        public void Get_user_with_invalid_user_id(string userId)
+        {
+            UserLoginAdministration sut = new();
+            sut.GetUserByUserId(userId);
+        }
+
+        [TestMethod]
+        public void Get_user_with_valid_user_id()
+        {
+            UserLoginAdministration sut = new();
+            string email = "mail1@mail.com",
+                   password = "ABcd01_-1223",
+                   nickname = "Peter";
+            sut.Register(email, password, nickname);
+            User userPeter = sut.GetUsers()[^1];
+            sut.GetUserByUserId(userPeter.Id).Should().BeEquivalentTo(userPeter);
+        }
+
+        [DataTestMethod]
+        [DataRow("", "")]
+        [DataRow("invalid_user_id", "invalid_email")]
+        [DataRow("", "mail2@mail.com")]
+        [DataRow("invalid_user_id", "mail2@mail.com")]
+        [ExpectedException(typeof(ArgumentException))]
+        public void Rename_with_invalid_arguments(string userId, string newEmail)
+        {
+            UserLoginAdministration sut = new();
+            string email = "mail1@mail.com",
+                   password = "ABcd01_-1223",
+                   nickname = "Peter";
+            sut.Register(email, password, nickname);
+            sut.Rename(userId, newEmail, "");
+        }
+
+        [DataTestMethod]
+        [DataRow("")]
+        [DataRow("invalid_email")]
+        [DataRow("abc@.de")]
+        [DataRow("@de")]
+        [ExpectedException(typeof(ArgumentException))]
+        public void Rename_with_invalid_new_email(string newEmail)
+        {
+            UserLoginAdministration sut = new();
+            string email = "mail1@mail.com",
+                   password = "ABcd01_-1223",
+                   nickname = "Peter";
+            sut.Register(email, password, nickname);
+            User userPeter = sut.GetUsers()[^1];
+            sut.Rename(userPeter.Id, newEmail, "");
+        }
+
+        [DataTestMethod]
+        [DataRow("mail1@mail.com", "")]
+        [DataRow("mail2@mail.com", "")]
+        [DataRow("mail1@mail.com", "Peter")]
+        [DataRow("mail3@mail.com", "Peter")]
+        [DataRow("mail1@mail.com", "Paul_123")]
+        [DataRow("mail3@mail.com", "Paul567")]
+        public void Rename_with_valid_arguments(string newEmail, string newNickname)
+        {
+            UserLoginAdministration sut = new();
+            string email = "mail1@mail.com",
+                   password = "ABcd01_-1223",
+                   nickname = "Peter";
+            sut.Register(email, password, nickname);
+            User userPeter = sut.GetUsers()[^1];
+            sut.Rename(userPeter.Id, newEmail, newNickname);
+            userPeter.Email.Should().Be(newEmail);
+            userPeter.Nickname.Should().Be(newNickname);
+        }
+
+        [DataTestMethod]
+        [DataRow("")]
+        [DataRow("invalid_password")]
+        [DataRow("abc@.de")]
+        [DataRow("@de")]
+        [ExpectedException(typeof(ArgumentException))]
+        public void Change_password_to_invalid_password(string newPassword)
+        {
+            UserLoginAdministration sut = new();
+            string email = "mail1@mail.com",
+                   password = "ABcd01_-1223",
+                   nickname = "Peter";
+            sut.Register(email, password, nickname);
+            User userPeter = sut.GetUsers()[^1];
+            sut.ChangePassword(userPeter.Id, newPassword);
+        }
+
+        [DataTestMethod]
+        [DataRow("ABcd01_-1224")]
+        [DataRow("ABcd01_-1224-ABcd01_-1224")]
+        [DataRow("ABcd01_-12____cd01_-1224")]
+        public void Change_password_to_valid_password(string newPassword)
+        {
+            UserLoginAdministration sut = new();
+            string email = "mail1@mail.com",
+                   password = "ABcd01_-1223",
+                   nickname = "Peter";
+            sut.Register(email, password, nickname);
+            User userPeter = sut.GetUsers()[^1];
+            sut.ChangePassword(userPeter.Id, newPassword);
+            userPeter.Password.Should().Be(newPassword);
+        }
+
+        [DataTestMethod]
+        [DataRow("")]
+        [DataRow("invalid_password")]
+        [DataRow("abc@.de")]
+        [DataRow("ABcd01_-1224")]
+        [ExpectedException(typeof(ArgumentException))]
+        public void Delete_user_with_invalid_password(string deletePassword)
+        {
+            UserLoginAdministration sut = new();
+            string email = "mail1@mail.com",
+                   password = "ABcd01_-1223",
+                   nickname = "Peter";
+            sut.Register(email, password, nickname);
+            User userPeter = sut.GetUsers()[^1];
+            sut.Delete(userPeter.Id, deletePassword);
+        }
+
+        [TestMethod]
+        public void Delete_user_successfully()
+        {
+            UserLoginAdministration sut = new();
+            string email = "mail1@mail.com",
+                   password = "ABcd01_-1223",
+                   nickname = "Peter";
+            sut.Register(email, password, nickname);
+            User userPeter = sut.GetUsers()[^1];
+            sut.Delete(userPeter.Id, password);
+            sut.GetUsers().Should().HaveCount(0);
+            sut.Register(email, password, nickname);
+            userPeter = sut.GetUsers()[^1];
+            sut.Register("2" + email, password, nickname + "2");
+            sut.Delete(userPeter.Id, password);
+            sut.GetUsers().Should().HaveCount(1);
+        }
+
+        [TestMethod]
+        public void Test_example_with_saving_to_and_loading_from_data()
+        {
+            UserLoginAdministration sut = new()
+            {
+                UsersFilePath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "/users.json"
+            };
+            string email = "mail1@mail.com",
+                   password = "ABcd01_-1223",
+                   nickname = "Peter";
+            sut.Register(email, password, nickname);
+            User userPeter = sut.GetUsers()[^1];
+            sut.Delete(userPeter.Id, password);
+            sut.GetUsers().Should().HaveCount(0);
+            sut.Register(email, password, nickname);
+            userPeter = sut.GetUsers()[^1];
+            sut.Register("2" + email, password, nickname + "2");
+            sut.Delete(userPeter.Id, password);
+            sut.GetUsers().Should().HaveCount(1);
+
+            while (sut.GetUsers().Count > 0)
+            {
+                User user = sut.GetUsers()[^1];
+                sut.Delete(user.Id, user.Password);
+            }
+        }
     }
 }

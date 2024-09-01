@@ -1,13 +1,30 @@
 ﻿using System.Net.Mail;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace _01_UserLogin
 {
-    public class UserLoginAdministration : IRegistration, ILogin
+    public class UserLoginAdministration : IRegistration, ILogin, IAdministration
     {
         private List<User> _users;
+        private string _userFilePath;
 
         public int TokenLifetimeInDays { get; set; } = 100;
+        public string UsersFilePath
+        {
+            get
+            {
+                return _userFilePath;
+            }
+
+            set
+            {
+                _userFilePath = value;
+
+                if (_userFilePath != string.Empty)
+                    LoadUsers();
+            }
+        }
 
         public UserLoginAdministration()
         {
@@ -50,8 +67,6 @@ namespace _01_UserLogin
                     throw new InvalidOperationException($"Nickname {nickname} already used.");
             }
 
-            LoadUsers();
-
             // email still free (not used yet)
             if (_users.Any(u => u.Email == email))
                 throw new InvalidOperationException($"Email {email} already registered.");
@@ -80,14 +95,21 @@ namespace _01_UserLogin
 
         private void LoadUsers()
         {
-            // TODO - get users from data
-            //throw new NotImplementedException();
+            if (string.IsNullOrEmpty(UsersFilePath) || !File.Exists(UsersFilePath))
+                return;
+
+            string json = File.ReadAllText(UsersFilePath);
+            JsonSerializerOptions options = new() { PropertyNameCaseInsensitive = true };
+            _users = JsonSerializer.Deserialize<List<User>>(json, options) ?? [];
         }
 
         private void SaveUsers()
         {
-            // TODO - save users to data
-            //throw new NotImplementedException();
+            if (string.IsNullOrEmpty(UsersFilePath))
+                return;
+
+            string json = JsonSerializer.Serialize(_users);
+            File.WriteAllText(UsersFilePath, json);
         }
 
         private static void SendRegistrationEmail(User user)
@@ -311,6 +333,60 @@ namespace _01_UserLogin
 
             if (user == null)
                 user = _users.Where(u => u.Nickname == loginname).FirstOrDefault();
+
+            return user;
+        }
+
+        public User CurrentUser(string token)
+        {
+            if (IsLoginValid(token))
+                return _users.Where(u => u.Token == token).First();
+            else
+                throw new ArgumentException("Invalid token");
+        }
+
+        public void Rename(string userId, string email, string nickname)
+        {
+            User user = GetUserByUserId(userId);
+            ValidateEmail(email);
+
+            user.Email = email;
+            user.Nickname = nickname;
+
+            SaveUsers();
+        }
+
+        public void ChangePassword(string userId, string password)
+        {
+            User user = GetUserByUserId(userId);
+            ValidatePassword(password);
+
+            user.Password = password;
+
+            SaveUsers();
+        }
+
+        public void Delete(string userId, string password)
+        {
+            User user = GetUserByUserId(userId);
+
+            if (user.Password != password)
+                throw new ArgumentException("Invalid, missing or wrong password");
+
+            _users.Remove(user);
+
+            SaveUsers();
+        }
+
+        public User GetUserByUserId(string userId)
+        {
+            if (userId == string.Empty)
+                throw new ArgumentException("User ID missing");
+
+            User? user = _users.Where(u => u.Id == userId).FirstOrDefault();
+
+            if (user == null)
+                throw new ArgumentException("Invalid user ID");
 
             return user;
         }
