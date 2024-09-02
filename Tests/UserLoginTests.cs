@@ -1,5 +1,7 @@
 using _01_UserLogin;
 using FluentAssertions;
+using System.Net;
+using System.Net.Mail;
 
 namespace Tests
 {
@@ -582,6 +584,9 @@ namespace Tests
         [TestMethod]
         public void Test_example_with_saving_to_and_loading_from_data()
         {
+            // Do not test this all the time
+            return;
+
             UserLoginAdministration sut = new()
             {
                 UsersFilePath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "/users.json"
@@ -604,6 +609,44 @@ namespace Tests
                 User user = sut.GetUsers()[^1];
                 sut.Delete(user.Id, user.Password);
             }
+        }
+
+        [TestMethod]
+        public void Test_example_with_emails()
+        {
+            // Do not test this all the time
+            return;
+
+            string[] connectionFileData = File.ReadAllLines(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "/UserLoginKata/TestConfig.txt");
+
+            int SmtpPort = int.Parse(connectionFileData[1]);
+            string SmtpServer = connectionFileData[0],
+                   SmtpUser = connectionFileData[2],
+                   SmtpPassword = connectionFileData[3],
+                   SenderEmail = SmtpUser;
+
+            UserLoginAdministration sut = new()
+            {
+                EmailSmtpClient = new SmtpClient(SmtpServer)
+                {
+                    Port = SmtpPort,
+                    Credentials = new NetworkCredential(SmtpUser, SmtpPassword),
+                    EnableSsl = true
+                },
+                SenderEmail = SenderEmail
+            };
+            string email = SenderEmail,
+                   password = "",
+                   nickname = "Peter";
+            sut.Register(email, password, nickname);
+            Thread.Sleep(1000);
+            string registrationNumber = sut.GetUsers()[^1].RegistrationNumber.ToString();
+            sut.Confirm(registrationNumber);
+            Thread.Sleep(1000);
+            sut.RequestPasswordReset(sut.GetUsers()[^1].Email);
+            Thread.Sleep(1000);
+            string resetRequestNumber = sut.GetUsers()[^1].ResetRequestNumber.ToString();
+            sut.ResetPassword(resetRequestNumber);
         }
     }
 }
