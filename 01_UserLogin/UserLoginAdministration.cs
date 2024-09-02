@@ -6,9 +6,11 @@ namespace _01_UserLogin
 {
     public class UserLoginAdministration : IRegistration, ILogin, IAdministration
     {
+        private readonly JsonSerializerOptions _jsonSerializerOptions;
         private List<User> _users;
         private string _userFilePath;
-
+        public SmtpClient? EmailSmtpClient { get; set; } = null;
+        public string? SenderEmail { get; set; } = null;
         public int TokenLifetimeInDays { get; set; } = 100;
         public string UsersFilePath
         {
@@ -28,7 +30,9 @@ namespace _01_UserLogin
 
         public UserLoginAdministration()
         {
+            _jsonSerializerOptions = new() { PropertyNameCaseInsensitive = true };
             _users = [];
+            _userFilePath = string.Empty;
         }
 
         public void Confirm(string registrationNumber)
@@ -40,6 +44,9 @@ namespace _01_UserLogin
                 throw new InvalidOperationException("No unconfired user find for this registration number");
             else
                 user.RegistrationNumber = 0;
+
+            user.LastUpdatedDate = DateTime.UtcNow;
+            SaveUsers();
 
             SendConfirmationEmail(user);
         }
@@ -99,8 +106,7 @@ namespace _01_UserLogin
                 return;
 
             string json = File.ReadAllText(UsersFilePath);
-            JsonSerializerOptions options = new() { PropertyNameCaseInsensitive = true };
-            _users = JsonSerializer.Deserialize<List<User>>(json, options) ?? [];
+            _users = JsonSerializer.Deserialize<List<User>>(json, _jsonSerializerOptions) ?? [];
         }
 
         private void SaveUsers()
@@ -112,28 +118,73 @@ namespace _01_UserLogin
             File.WriteAllText(UsersFilePath, json);
         }
 
-        private static void SendRegistrationEmail(User user)
+        private void SendRegistrationEmail(User user)
         {
-            // TODO - Create registration email and send it
-            //throw new NotImplementedException();
+            if (EmailSmtpClient == null || string.IsNullOrEmpty(SenderEmail))
+                return;
+
+            MailMessage mailMessage = new()
+            {
+                From = new MailAddress(SenderEmail),
+                Subject = "Registration Email",
+                Body = $"<h1>Hello {(user.Nickname != string.Empty ? user.Nickname : user.Email)}</h1>" +
+                       $"<p>Your registration number is {user.RegistrationNumber}. Please visit the registration site, give your number and confirm your registration.</p>",
+                IsBodyHtml = true,
+            };
+            mailMessage.To.Add(user.Email);
+            EmailSmtpClient.Send(mailMessage);
         }
 
-        private static void SendConfirmationEmail(User user)
+        private void SendConfirmationEmail(User user)
         {
-            // TODO - Create confirmation email and send it
-            //throw new NotImplementedException();
+            if (EmailSmtpClient == null || string.IsNullOrEmpty(SenderEmail))
+                return;
+
+            MailMessage mailMessage = new()
+            {
+                From = new MailAddress(SenderEmail),
+                Subject = "Confirmation Email",
+                Body = $"<h1>Hello {(user.Nickname != string.Empty ? user.Nickname : user.Email)}</h1>" +
+                       $"<p>Your registration has been confirmed. Your account is now ready to use.</p>",
+                IsBodyHtml = true,
+            };
+            mailMessage.To.Add(user.Email);
+            EmailSmtpClient.Send(mailMessage);
         }
 
-        private static void SendRequestPasswordEmail(User user)
+        private void SendRequestPasswordEmail(User user)
         {
-            // TODO - Create request password email and send it
-            //throw new NotImplementedException();
+            if (EmailSmtpClient == null || string.IsNullOrEmpty(SenderEmail))
+                return;
+
+            MailMessage mailMessage = new()
+            {
+                From = new MailAddress(SenderEmail),
+                Subject = "Request New Password",
+                Body = $"<h1>Hello {(user.Nickname != string.Empty ? user.Nickname : user.Email)}</h1>" +
+                       $"<p>A new password was requested for your email. If that was you, click on the link below to receive a new password.</p>" +
+                       $"<a>no password link on this devlopment level</a>",
+                IsBodyHtml = true,
+            };
+            mailMessage.To.Add(user.Email);
+            EmailSmtpClient.Send(mailMessage);
         }
 
-        private static void SendNewPasswordEmail(User user)
+        private void SendNewPasswordEmail(User user)
         {
-            // TODO - Create new password email and send it
-            //throw new NotImplementedException();
+            if (EmailSmtpClient == null || string.IsNullOrEmpty(SenderEmail))
+                return;
+
+            MailMessage mailMessage = new()
+            {
+                From = new MailAddress(SenderEmail),
+                Subject = "New Password",
+                Body = $"<h1>Hello {(user.Nickname != string.Empty ? user.Nickname : user.Email)}</h1>" +
+                       $"<p>Your new password is <i>{user.Password}</i></p>",
+                IsBodyHtml = true,
+            };
+            mailMessage.To.Add(user.Email);
+            EmailSmtpClient.Send(mailMessage);
         }
 
         public static string CreatePassword()
@@ -251,6 +302,7 @@ namespace _01_UserLogin
                 throw new ArgumentException("Invalid loginname or invalid password");
 
             user.Token = GetNewToken();
+            user.LastLoginDate = DateTime.Now;
             SaveUsers();
             return user.Token;
         }
@@ -264,7 +316,7 @@ namespace _01_UserLogin
 
         public bool IsLoginValid(string token)
         {
-            if (_users.Count(u => u.Token == token) == 0)
+            if (!_users.Any(u => u.Token == token))
                 return false;
 
             byte[] tokenByteArray = Convert.FromBase64String(token);
@@ -274,13 +326,9 @@ namespace _01_UserLogin
 
         public void RequestPasswordReset(string email)
         {
-            User? user = _users.FirstOrDefault(u => u.Email == email);
-
-            if (user == null)
-                throw new ArgumentException("No user found for this email address");
-
+            User? user = _users.FirstOrDefault(u => u.Email == email) ?? throw new ArgumentException("No user found for this email address");
             user.ResetRequestNumber = CreateResetRequestNumber();
-
+            user.LastUpdatedDate = DateTime.UtcNow;
             SaveUsers();
 
             SendRequestPasswordEmail(user);
@@ -289,13 +337,9 @@ namespace _01_UserLogin
         public void ResetPassword(string resetRequestNumber)
         {
             uint number = ValidateResetRequestNumber(resetRequestNumber);
-            User? user = _users.FirstOrDefault(u => u.ResetRequestNumber == number);
-
-            if (user == null)
-                throw new InvalidOperationException("No user found for this reset request number");
-
+            User? user = _users.FirstOrDefault(u => u.ResetRequestNumber == number) ?? throw new InvalidOperationException("No user found for this reset request number");
             user.Password = CreatePassword();
-
+            user.LastUpdatedDate = DateTime.UtcNow;
             SaveUsers();
 
             SendNewPasswordEmail(user);
@@ -327,14 +371,7 @@ namespace _01_UserLogin
             if (string.IsNullOrEmpty(loginname))
                 throw new ArgumentException("Loginname is missing");
 
-            User? user = null;
-
-            user = _users.Where(u => u.Email == loginname).FirstOrDefault();
-
-            if (user == null)
-                user = _users.Where(u => u.Nickname == loginname).FirstOrDefault();
-
-            return user;
+            return _users.Where(u => u.Email == loginname).FirstOrDefault() ?? _users.Where(u => u.Nickname == loginname).FirstOrDefault();
         }
 
         public User CurrentUser(string token)
@@ -352,6 +389,7 @@ namespace _01_UserLogin
 
             user.Email = email;
             user.Nickname = nickname;
+            user.LastUpdatedDate = DateTime.UtcNow;
 
             SaveUsers();
         }
@@ -362,6 +400,7 @@ namespace _01_UserLogin
             ValidatePassword(password);
 
             user.Password = password;
+            user.LastUpdatedDate = DateTime.UtcNow;
 
             SaveUsers();
         }
@@ -385,10 +424,7 @@ namespace _01_UserLogin
 
             User? user = _users.Where(u => u.Id == userId).FirstOrDefault();
 
-            if (user == null)
-                throw new ArgumentException("Invalid user ID");
-
-            return user;
+            return user ?? throw new ArgumentException("Invalid user ID");
         }
     }
 }
