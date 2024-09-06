@@ -2,4 +2,5 @@
 
 In this repository I am presenting my solutions for the library katas of the [Clean Code Developer School Coding Dojo](https://ccd-school.de/coding-dojo/ "Coding Dojo")
 
-+ 01: [User Login](https://ccd-school.de/en/coding-dojo/library-katas/user-login/ "User Login") -> Work in progress
++ 01: [User Login](https://ccd-school.de/en/coding-dojo/library-katas/user-login/ "User Login") -> [Done](/01_UserLogin/ "Project Folder")
++ 02: [Find File Duplicates](https://ccd-school.de/en/coding-dojo/library-katas/find-file-duplicates/ "Find File Duplicates") -> Work in progress
