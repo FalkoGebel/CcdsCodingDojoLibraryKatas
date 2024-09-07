@@ -4,8 +4,8 @@ namespace _02_FindFileDuplicates
 {
     public interface ICheckForDuplicates
     {
-        IEnumerable Compile_candidates(string folderpath);
-        IEnumerable Compile_candidates(string folderpath, CompareModes mode);
-        IEnumerable Check_candidates(IEnumerable candidates);
+        IEnumerable CompileCandidates(string folderpath);
+        IEnumerable CompileCandidates(string folderpath, CompareModes mode);
+        IEnumerable CheckCandidates(IEnumerable candidates);
     }
 }

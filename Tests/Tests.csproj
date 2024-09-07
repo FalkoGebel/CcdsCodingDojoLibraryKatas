@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\01_UserLogin\01_UserLogin.csproj" />
+    <ProjectReference Include="..\02_FindFileDuplicates\02_FindFileDuplicates.csproj" />
   </ItemGroup>
 
   <ItemGroup>
