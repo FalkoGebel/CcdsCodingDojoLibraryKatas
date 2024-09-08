@@ -1,5 +1,4 @@
-﻿
-using System.Collections;
+﻿using System.Collections;
 
 namespace _02_FindFileDuplicates
 {
@@ -10,9 +9,25 @@ namespace _02_FindFileDuplicates
                         .Select(f => (new FileInfo(f)).FullName)
                         .ToList();
 
+        public static string GetMd5(string input)
+        {
+            byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(input);
+            byte[] hashBytes = System.Security.Cryptography.MD5.HashData(inputBytes);
+
+            return Convert.ToHexString(hashBytes).ToLower();
+        }
+
         public IEnumerable CheckCandidates(IEnumerable candidates)
         {
-            throw new NotImplementedException();
+            Dictionary<string, string> candidatesWithMd5 = [];
+
+            foreach (string c in (IEnumerable<string>)candidates)
+            {
+                candidatesWithMd5[c] = GetMd5(string.Concat(File.ReadAllBytes(c)));
+            }
+
+            return candidatesWithMd5.Where(c => candidatesWithMd5.Count(cc => c.Value == cc.Value) > 1)
+                                    .Select(c => c.Key);
         }
 
         public IEnumerable CompileCandidates(string folderpath) => CompileCandidates(folderpath, CompareModes.SizeAndName);

@@ -75,6 +75,29 @@ namespace Tests
             candidates.Count().Should().Be(16);
         }
 
+        [DataTestMethod]
+        [DataRow("", "d41d8cd98f00b204e9800998ecf8427e")]
+        [DataRow("Franz jagt im komplett verwahrlosten Taxi quer durch Bayern", "a3cca2b2aa1e3b5b3b5aad99a8529074")]
+        [DataRow("Frank jagt im komplett verwahrlosten Taxi quer durch Bayern", "7e716d0e702df0505fc72e2b89467910")]
+        public void Test_Md5(string input, string md5)
+        {
+            FindFileDuplicatesLogic.GetMd5(input).Should().Be(md5);
+        }
+
+
+        [TestMethod]
+        public void Test_check_candidates()
+        {
+            FindFileDuplicatesLogic sut = new();
+            IEnumerable<string> candidates_default = (IEnumerable<string>)sut.CompileCandidates(_folderpath);
+            IEnumerable<string> results_default = (IEnumerable<string>)sut.CheckCandidates(candidates_default);
+            results_default.Count().Should().Be(13);
+
+            IEnumerable<string> candidates_size = (IEnumerable<string>)sut.CompileCandidates(_folderpath, CompareModes.Size);
+            IEnumerable<string> results_size = (IEnumerable<string>)sut.CheckCandidates(candidates_size);
+            results_size.Count().Should().Be(15);
+        }
+
         [ClassCleanup]
         public static void ClassCleanup()
         {
