@@ -51,7 +51,7 @@ namespace Tests
         [TestMethod]
         public void Test_get_files_from_folderpath()
         {
-            List<string> files = FindFileDuplicatesLogic.GetFileForPaths(_folderpath);
+            List<FileInfo> files = FindFileDuplicatesLogic.GetFilesForPath(_folderpath);
             files.Count().Should().Be(17);
         }
 
@@ -83,7 +83,6 @@ namespace Tests
         {
             FindFileDuplicatesLogic.GetMd5(input).Should().Be(md5);
         }
-
 
         [TestMethod]
         public void Test_check_candidates()
