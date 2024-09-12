@@ -4,9 +4,15 @@ namespace _02_FindFileDuplicates
 {
     public class FindFileDuplicatesLogic : ICheckForDuplicates
     {
-        public static List<string> GetFileForPaths(string folderpath)
+        private float _percentageCheckCandidates;
+        private float _percentageCompileCandidates;
+
+        public float PercentageCheckCandidates { get => _percentageCheckCandidates; }
+        public float PercentageCompileCandidates { get => _percentageCompileCandidates; }
+
+        public static List<FileInfo> GetFilesForPath(string folderpath)
             => Directory.GetFiles(folderpath, "*", SearchOption.AllDirectories)
-                        .Select(f => (new FileInfo(f)).FullName)
+                        .Select(f => new FileInfo(f))
                         .ToList();
 
         public static string GetMd5(string input)
@@ -21,9 +27,14 @@ namespace _02_FindFileDuplicates
         {
             Dictionary<string, string> candidatesWithMd5 = [];
 
+            int counter = 0;
+
             foreach (string c in (IEnumerable<string>)candidates)
             {
                 candidatesWithMd5[c] = GetMd5(string.Concat(File.ReadAllBytes(c)));
+
+                counter++;
+                _percentageCheckCandidates = counter / (float)((IEnumerable<string>)candidates).Count() * 100;
             }
 
             return candidatesWithMd5.Where(c => candidatesWithMd5.Count(cc => c.Value == cc.Value) > 1)
@@ -38,11 +49,8 @@ namespace _02_FindFileDuplicates
                 throw new ArgumentException("Missing or invalid folderpath");
 
             Duplicates duplicates = new();
-            List<string> files = GetFileForPaths(folderpath);
-            List<FileInfo> fileInfos = [];
-
-            foreach (string file in files)
-                fileInfos.Add(new FileInfo(file));
+            List<FileInfo> fileInfos = GetFilesForPath(folderpath);
+            int counter = 0;
 
             foreach (FileInfo fileInfo in fileInfos)
             {
@@ -60,6 +68,9 @@ namespace _02_FindFileDuplicates
 
                     default: throw new ArgumentException($"Compare mode \"{mode}\" not supported");
                 }
+
+                counter++;
+                _percentageCompileCandidates = counter / (float)fileInfos.Count * 100;
             }
 
             return duplicates.Filepath;
