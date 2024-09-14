@@ -3,7 +3,7 @@ namespace _02_FindFileDuplicates
 {
     public class Duplicates : IDuplicates
     {
-        List<Duplicate> _duplicates;
+        readonly List<Duplicate> _duplicates;
         public IEnumerable<string> Filepath { get => _duplicates.Select(d => d.Path); }
 
         public Duplicates()

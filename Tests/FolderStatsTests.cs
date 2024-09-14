@@ -1,0 +1,113 @@
+﻿using _03_FolderStats;
+using FluentAssertions;
+
+namespace Tests
+{
+    [TestClass]
+    public class FolderStatsTests
+    {
+        private static readonly string _rootPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "/FolderStatsKata/";
+
+        [ClassInitialize]
+        public static void ClassInitialize(TestContext context)
+        {
+            Directory.CreateDirectory(_rootPath);
+            Directory.CreateDirectory(_rootPath + "Subfolder1");
+            Directory.CreateDirectory(_rootPath + "Subfolder2");
+            Directory.CreateDirectory(_rootPath + "Subfolder3");
+            File.WriteAllText(_rootPath + "Subfolder1/EmptyFile1.txt", string.Empty);
+            File.WriteAllText(_rootPath + "Subfolder1/EmptyFile2.txt", string.Empty);
+            File.WriteAllText(_rootPath + "Subfolder1/EmptyFile3.txt", string.Empty);
+            File.WriteAllText(_rootPath + "Subfolder1/TextFile1.txt", "This is a one liner.");
+            File.WriteAllText(_rootPath + "Subfolder1/TextFile2.txt", "This is a two liner.\nReally!");
+            File.WriteAllText(_rootPath + "Subfolder1/TextFile3b.txt", "This is a three liner.\nReally!\nI swear.");
+
+
+            File.WriteAllText(_rootPath + "Subfolder2/EmptyFile1.txt", string.Empty);
+            File.WriteAllText(_rootPath + "Subfolder2/emptyfile3.txt", string.Empty);
+            File.WriteAllText(_rootPath + "Subfolder2/TextFile1.txt", "This is a one liner.");
+            File.WriteAllText(_rootPath + "Subfolder2/TextFile2.txt", "This is a two liner.\nReally!");
+            File.WriteAllText(_rootPath + "Subfolder2/TextFile4b.txt", "This is a 2? Byte file.");
+            File.WriteAllText(_rootPath + "Subfolder2/LargeFile.txt", "This is a very large file…a really large file...large than the other files in the pot.\nI swear.");
+
+
+            File.WriteAllText(_rootPath + "Subfolder3/TextFile1.txt", "This is a one liner.");
+            File.WriteAllText(_rootPath + "Subfolder3/TextFile3.txt", "This is a three liner.\nReally!\nI swear.");
+            File.WriteAllText(_rootPath + "Subfolder3/TextFile3b.txt", "This is a three liner.\nReally!\nI swear.");
+            File.WriteAllText(_rootPath + "Subfolder3/TextFile4.txt", "This is a 23 Byte file.");
+            File.WriteAllText(_rootPath + "Subfolder3/TextFile4b.txt", "This is a 2? Byte file.");
+        }
+
+        [TestMethod]
+        public void New_Folder_Stats_Instance()
+        {
+            FolderStats folderStats = new();
+            folderStats.Should().NotBeNull();
+        }
+
+        [TestMethod]
+        public void New_Folder_Stats_Instance_has_waiting_status()
+        {
+            FolderStats folderStats = new();
+            folderStats.Status.Should().Be(Statuses.Waiting);
+        }
+
+        [TestMethod]
+        public void After_start_has_running_status()
+        {
+            FolderStats folderStats = new();
+            folderStats.Start();
+            folderStats.Status.Should().Be(Statuses.Running);
+        }
+
+        [TestMethod]
+        public void After_pause_has_paused_status()
+        {
+            FolderStats folderStats = new();
+            folderStats.Pause();
+            folderStats.Status.Should().Be(Statuses.Paused);
+        }
+
+        [TestMethod]
+        public void After_pause_and_resume_has_running_status()
+        {
+            FolderStats folderStats = new();
+            folderStats.Pause();
+            folderStats.Resume();
+            folderStats.Status.Should().Be(Statuses.Running);
+        }
+
+        [TestMethod]
+        public void After_stop_has_connected_status()
+        {
+            FolderStats folderStats = new();
+            folderStats.Stop();
+            folderStats.Status.Should().Be(Statuses.Connected);
+        }
+
+        [DataTestMethod]
+        [DataRow("")]
+        [DataRow("abc")]
+        [DataRow("123")]
+        [DataRow(@"C:\invalid_folder\")]
+        [ExpectedException(typeof(ArgumentException))]
+        public void Test_connect_with_invalid_paths(string rootPath)
+        {
+            FolderStats folderStats = new();
+            folderStats.Connect(rootPath);
+        }
+
+        [TestMethod]
+        public void After_connect_has_connected_status_and_correct_root_path_and_correct_number_of_folders()
+        {
+            FolderStats folderStats = new();
+            folderStats.Connect(_rootPath);
+            folderStats.Status.Should().Be(Statuses.Connected);
+            folderStats.RootPath.Should().Be(_rootPath);
+            folderStats.Folders.Count().Should().Be(4);
+            folderStats.Folders.Where(f => f.Depth == 0).Count().Should().Be(1);
+            folderStats.Folders.Where(f => f.Depth == 1).Count().Should().Be(3);
+            folderStats.Folders.Where(f => f.Depth == 2).Count().Should().Be(0);
+        }
+    }
+}

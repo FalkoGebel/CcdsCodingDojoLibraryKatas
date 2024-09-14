@@ -1,9 +1,7 @@
-﻿using System.Collections;
-
-namespace _02_FindFileDuplicates
+﻿namespace _02_FindFileDuplicates
 {
-    public interface IDuplicates<T> where T : class
+    public interface IDuplicates
     {
-        IEnumerable Filepath { get; }
+        IEnumerable<string> Filepath { get; }
     }
 }
