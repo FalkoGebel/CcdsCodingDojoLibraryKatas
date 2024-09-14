@@ -1,11 +1,9 @@
-﻿using System.Collections;
-
-namespace _02_FindFileDuplicates
+﻿namespace _02_FindFileDuplicates
 {
     public interface ICheckForDuplicates
     {
-        IEnumerable CompileCandidates(string folderpath);
-        IEnumerable CompileCandidates(string folderpath, CompareModes mode);
-        IEnumerable CheckCandidates(IEnumerable candidates);
+        IEnumerable<string> CompileCandidates(string folderpath);
+        IEnumerable<string> CompileCandidates(string folderpath, CompareModes mode);
+        IEnumerable<string> CheckCandidates(IEnumerable<string> candidates);
     }
 }

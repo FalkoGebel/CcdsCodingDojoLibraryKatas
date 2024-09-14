@@ -1,6 +1,4 @@
-﻿using System.Collections;
-
-namespace _02_FindFileDuplicates
+﻿namespace _02_FindFileDuplicates
 {
     public class FindFileDuplicatesLogic : ICheckForDuplicates
     {
@@ -23,27 +21,28 @@ namespace _02_FindFileDuplicates
             return Convert.ToHexString(hashBytes).ToLower();
         }
 
-        public IEnumerable CheckCandidates(IEnumerable candidates)
+        public IEnumerable<string> CheckCandidates(IEnumerable<string> candidates)
         {
             Dictionary<string, string> candidatesWithMd5 = [];
 
             int counter = 0;
 
-            foreach (string c in (IEnumerable<string>)candidates)
+            foreach (string c in (candidates))
             {
                 candidatesWithMd5[c] = GetMd5(string.Concat(File.ReadAllBytes(c)));
 
                 counter++;
-                _percentageCheckCandidates = counter / (float)((IEnumerable<string>)candidates).Count() * 100;
+                _percentageCheckCandidates = counter / (float)(candidates).Count() * 100;
             }
 
             return candidatesWithMd5.Where(c => candidatesWithMd5.Count(cc => c.Value == cc.Value) > 1)
-                                    .Select(c => c.Key);
+                                    .Select(c => c.Key)
+                                    .ToList();
         }
 
-        public IEnumerable CompileCandidates(string folderpath) => CompileCandidates(folderpath, CompareModes.SizeAndName);
+        public IEnumerable<string> CompileCandidates(string folderpath) => CompileCandidates(folderpath, CompareModes.SizeAndName);
 
-        public IEnumerable CompileCandidates(string folderpath, CompareModes mode)
+        public IEnumerable<string> CompileCandidates(string folderpath, CompareModes mode)
         {
             if (string.IsNullOrEmpty(folderpath) || !Directory.Exists(folderpath))
                 throw new ArgumentException("Missing or invalid folderpath");
