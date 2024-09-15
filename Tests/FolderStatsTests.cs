@@ -22,14 +22,12 @@ namespace Tests
             File.WriteAllText(_rootPath + "Subfolder1/TextFile2.txt", "This is a two liner.\nReally!");
             File.WriteAllText(_rootPath + "Subfolder1/TextFile3b.txt", "This is a three liner.\nReally!\nI swear.");
 
-
             File.WriteAllText(_rootPath + "Subfolder2/EmptyFile1.txt", string.Empty);
             File.WriteAllText(_rootPath + "Subfolder2/emptyfile3.txt", string.Empty);
             File.WriteAllText(_rootPath + "Subfolder2/TextFile1.txt", "This is a one liner.");
             File.WriteAllText(_rootPath + "Subfolder2/TextFile2.txt", "This is a two liner.\nReally!");
             File.WriteAllText(_rootPath + "Subfolder2/TextFile4b.txt", "This is a 2? Byte file.");
             File.WriteAllText(_rootPath + "Subfolder2/LargeFile.txt", "This is a very large file…a really large file...large than the other files in the pot.\nI swear.");
-
 
             File.WriteAllText(_rootPath + "Subfolder3/TextFile1.txt", "This is a one liner.");
             File.WriteAllText(_rootPath + "Subfolder3/TextFile3.txt", "This is a three liner.\nReally!\nI swear.");
@@ -53,36 +51,35 @@ namespace Tests
         }
 
         [TestMethod]
-        public void After_start_has_running_status()
+        [ExpectedException(typeof(InvalidOperationException))]
+        public void No_start_if_not_connected()
         {
             FolderStats folderStats = new();
             folderStats.Start();
-            folderStats.Status.Should().Be(Statuses.Running);
         }
 
         [TestMethod]
-        public void After_pause_has_paused_status()
+        [ExpectedException(typeof(InvalidOperationException))]
+        public void No_pause_if_not_running()
         {
             FolderStats folderStats = new();
             folderStats.Pause();
-            folderStats.Status.Should().Be(Statuses.Paused);
         }
 
         [TestMethod]
-        public void After_pause_and_resume_has_running_status()
+        [ExpectedException(typeof(InvalidOperationException))]
+        public void No_resume_if_not_paused()
         {
             FolderStats folderStats = new();
-            folderStats.Pause();
             folderStats.Resume();
-            folderStats.Status.Should().Be(Statuses.Running);
         }
 
         [TestMethod]
-        public void After_stop_has_connected_status()
+        [ExpectedException(typeof(InvalidOperationException))]
+        public void No_stop_if_not_running_or_paused()
         {
             FolderStats folderStats = new();
             folderStats.Stop();
-            folderStats.Status.Should().Be(Statuses.Connected);
         }
 
         [DataTestMethod]
@@ -108,6 +105,12 @@ namespace Tests
             folderStats.Folders.Where(f => f.Depth == 0).Count().Should().Be(1);
             folderStats.Folders.Where(f => f.Depth == 1).Count().Should().Be(3);
             folderStats.Folders.Where(f => f.Depth == 2).Count().Should().Be(0);
+        }
+
+        [ClassCleanup]
+        public static void ClassCleanup()
+        {
+            Directory.Delete(_rootPath, true);
         }
     }
 }
