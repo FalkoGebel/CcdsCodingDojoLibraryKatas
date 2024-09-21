@@ -107,6 +107,32 @@ namespace Tests
             folderStats.Folders.Where(f => f.Depth == 2).Count().Should().Be(0);
         }
 
+        [TestMethod]
+        public void After_processing_example_rootpath_folder_has_number_of_files_and_total_bytes()
+        {
+            FolderStats folderStats = new();
+            folderStats.Connect(_rootPath);
+            folderStats.Start();
+            while (folderStats.Status != Statuses.Finished)
+                Thread.Sleep(100);
+            Folder rootFolder = folderStats.Folders.Where(f => f.ParentPath == string.Empty).First();
+            rootFolder.NumberOfFiles.Should().Be(17);
+            rootFolder.TotalBytes.Should().Be(399);
+        }
+
+        [TestMethod]
+        public void Test_using_progress_event()
+        {
+            FolderStats folderStats = new();
+            folderStats.Connect(_rootPath);
+            int counter = 0;
+            folderStats.Progress += () => counter++;
+            folderStats.Start();
+            while (folderStats.Status != Statuses.Finished)
+                Thread.Sleep(100);
+            counter.Should().Be(4);
+        }
+
         [ClassCleanup]
         public static void ClassCleanup()
         {

@@ -6,7 +6,7 @@
         private Statuses _newStatus;
         private string _rootPath;
         readonly private List<Folder> _folders;
-        private Thread _process;
+        private Thread? _process;
 
         public IEnumerable<Folder> Folders { get => _folders; }
 
@@ -14,7 +14,7 @@
 
         public Statuses Status { get => _currentStatus; }
 
-        public event Action Progress;
+        public event Action? Progress;
 
         public FolderStats()
         {
@@ -88,20 +88,18 @@
             if (_currentStatus != Statuses.Running && _currentStatus != Statuses.Paused)
                 throw new InvalidOperationException("Folder Stats not running or paused - cannot be stopped");
 
+            // Reset all folders in list
+            for (int i = 0; i < _folders.Count; i++)
+            {
+                _folders[i].NumberOfFiles = 0;
+                _folders[i].TotalBytes = 0;
+            }
+
             _newStatus = Statuses.Connected;
         }
 
         private void Processing()
         {
-            // TODO - Fresh start or resume -> Distinction necessary?
-            if (_currentStatus == Statuses.Paused)
-            {
-
-            }
-
-            _currentStatus = Statuses.Running;
-            _newStatus = _currentStatus;
-
             for (; ; )
             {
                 if (_folders.All(f => f.Ready))
@@ -110,7 +108,6 @@
                 int maxDepth = _folders.Where(f => !f.Ready).Select(f => f.Depth).Max();
                 int idx = _folders.FindIndex(f => !f.Ready && f.Depth == maxDepth);
 
-                // implement the folder stats determination
                 Folder currentFolder = _folders[idx];
                 currentFolder.TotalBytes = 0;
                 currentFolder.NumberOfFiles = 0;
@@ -122,11 +119,11 @@
                     currentFolder.TotalBytes += subFolder.TotalBytes;
                 }
 
-                // get values for items for current folder from IO
+                // get values for files for current folder from IO
                 foreach (var file in Directory.GetFiles(currentFolder.Path, "*", SearchOption.TopDirectoryOnly))
                 {
                     currentFolder.NumberOfFiles++;
-                    FileInfo fileInfo = new FileInfo(file);
+                    FileInfo fileInfo = new(file);
                     currentFolder.TotalBytes += fileInfo.Length;
                 };
 
@@ -134,7 +131,9 @@
 
                 _folders[idx] = currentFolder;
 
-                // check, if threaded processing is to stop
+                Progress?.Invoke();
+
+                // check, if threaded processing needs to be stopped
                 if (_newStatus != _currentStatus)
                 {
                     switch (_newStatus)
@@ -155,6 +154,9 @@
 
         private void StartProcessingThread()
         {
+            _currentStatus = Statuses.Running;
+            _newStatus = _currentStatus;
+
             _process = new Thread(Processing)
             {
                 // This is important as it allows the process to exit while this thread is running
