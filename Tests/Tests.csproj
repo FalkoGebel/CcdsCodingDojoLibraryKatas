@@ -21,6 +21,7 @@
     <ProjectReference Include="..\01_UserLogin\01_UserLogin.csproj" />
     <ProjectReference Include="..\02_FindFileDuplicates\02_FindFileDuplicates.csproj" />
     <ProjectReference Include="..\03_FolderStats\03_FolderStats.csproj" />
+    <ProjectReference Include="..\04_INotifyTester\04_INotifyTester.csproj" />
   </ItemGroup>
 
   <ItemGroup>
