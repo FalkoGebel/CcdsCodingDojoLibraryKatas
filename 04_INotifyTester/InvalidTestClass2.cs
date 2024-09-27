@@ -2,7 +2,7 @@
 
 namespace _04_INotifyTester
 {
-    public class InvalidTestClass : INotifyPropertyChanged
+    public class InvalidTestClass2 : INotifyPropertyChanged
     {
         private int _validProperty;
         public int ValidProperty
