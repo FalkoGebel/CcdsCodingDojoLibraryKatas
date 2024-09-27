@@ -13,9 +13,16 @@ namespace Tests
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentException))]
-        public void Test_Invalid_Class()
+        public void Test_First_Invalid_Class()
         {
-            NotificationTester.Verify<InvalidTestClass>();
+            NotificationTester.Verify<InvalidTestClass1>();
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void Test_Second_Invalid_Class()
+        {
+            NotificationTester.Verify<InvalidTestClass2>();
         }
     }
 }
