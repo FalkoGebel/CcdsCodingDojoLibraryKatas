@@ -1,8 +1,7 @@
 ﻿namespace _04_INotifyTester
 {
-    public class InvalidTestClass1
+    public class InvalidTestClassInts1
     {
-        private int _validProperty;
         public int ValidProperty { get; set; }
         public int InvalidProperty { get; set; }
     }

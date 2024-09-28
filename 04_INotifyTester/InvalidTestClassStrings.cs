@@ -2,26 +2,22 @@
 
 namespace _04_INotifyTester
 {
-    public class InvalidTestClass2 : INotifyPropertyChanged
+    public class InvalidTestClassStrings : INotifyPropertyChanged
     {
-        private int _validProperty;
-        public int ValidProperty
+        private string _validProperty = string.Empty;
+        public string ValidProperty
         {
             get { return _validProperty; }
 
             set
             {
-                if (value != _validProperty)
-                {
-                    _validProperty = value;
-                    OnPropertyChanged(nameof(ValidProperty));
-                }
+                _validProperty = value;
+                OnPropertyChanged(nameof(ValidProperty));
             }
         }
-        public int InvalidProperty { get; set; }
+        public string InvalidProperty { get; set; } = string.Empty;
 
         public event PropertyChangedEventHandler? PropertyChanged;
-
         void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
