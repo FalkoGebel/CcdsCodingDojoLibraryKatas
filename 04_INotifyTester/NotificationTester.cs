@@ -22,21 +22,24 @@ namespace _04_INotifyTester
                 T initiatedObject = (T)Activator.CreateInstance(type);
 
                 int count = 0;
+                void IncrementCount(object sender, EventArgs e) { count++; }
+                eventInfo.AddEventHandler(initiatedObject, new PropertyChangedEventHandler(IncrementCount));
 
-                void IncrementCount() { count++; }
-                MethodInfo? incMethod = typeof(NotificationTester).GetMethod("Verify");
-
-                Delegate handler = Delegate.CreateDelegate(
-                      eventInfo?.EventHandlerType,
-                      initiatedObject,
-                      incMethod);
-
-                eventInfo.AddEventHandler(initiatedObject, handler);
-
-                setMethod.Invoke(initiatedObject, [1]);
+                if (pi.PropertyType == typeof(string))
+                {
+                    setMethod.Invoke(initiatedObject, ["1"]);
+                }
+                else if (pi.PropertyType.IsArray)
+                {
+                    setMethod.Invoke(initiatedObject, [Array.CreateInstance(pi.PropertyType.GetElementType(), 1)]);
+                }
+                else
+                {
+                    setMethod.Invoke(initiatedObject, [Activator.CreateInstance(pi.PropertyType)]);
+                }
 
                 if (count == 0)
-                    throw new ArgumentException(($"\"{type.FullName}\" not valid - \"{pi.Name}\" setter does not implement \"OnPropertyChanged\""));
+                    throw new ArgumentException(($"\"{type.FullName}\" not valid - \"{pi.Name}\" setter does not fire the event \"PropertyChanged\""));
             }
         }
     }

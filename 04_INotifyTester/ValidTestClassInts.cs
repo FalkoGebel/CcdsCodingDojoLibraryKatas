@@ -2,7 +2,7 @@
 
 namespace _04_INotifyTester
 {
-    public class ValidTestClass : INotifyPropertyChanged
+    public class ValidTestClassInts : INotifyPropertyChanged
     {
         private int _validPropertyOne;
         private int _validPropertyTwo;
@@ -13,11 +13,8 @@ namespace _04_INotifyTester
 
             set
             {
-                if (value != _validPropertyOne)
-                {
-                    _validPropertyOne = value;
-                    OnPropertyChanged(nameof(ValidPropertyOne));
-                }
+                _validPropertyOne = value;
+                OnPropertyChanged(nameof(ValidPropertyOne));
             }
         }
 
@@ -27,11 +24,8 @@ namespace _04_INotifyTester
 
             set
             {
-                if (value != _validPropertyTwo)
-                {
-                    _validPropertyTwo = value;
-                    OnPropertyChanged(nameof(ValidPropertyTwo));
-                }
+                _validPropertyTwo = value;
+                OnPropertyChanged(nameof(ValidPropertyTwo));
             }
         }
 
